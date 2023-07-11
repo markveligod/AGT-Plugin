@@ -273,7 +273,7 @@ enum class EJsonType : uint8
     Object
 };
 
-USTRUCT(BlueprintType, meta = (HasNativeMake = "BlueprintJson.BlueprintJsonLibrary.JsonMake", HasNativeBreak = "BlueprintJson.BlueprintJsonLibrary.Conv_JsonObjectToString"))
+USTRUCT(BlueprintType)
 struct FBlueprintJsonObject
 {
     GENERATED_USTRUCT_BODY()
@@ -281,10 +281,25 @@ struct FBlueprintJsonObject
     TSharedPtr<class FJsonObject> Object;
 };
 
-USTRUCT(BlueprintType, meta = (HasNativeMake = "BlueprintJson.BlueprintJsonLibrary.JsonMakeString"))
+USTRUCT(BlueprintType)
 struct FBlueprintJsonValue
 {
     GENERATED_USTRUCT_BODY()
 
     TSharedPtr<class FJsonValue> Value;
 };
+
+/** Async package loading result */
+UENUM(BlueprintType)
+enum class ERyAsyncLoadingResult : uint8
+{
+    /** Package failed to load */
+    Failed,
+    /** Package loaded successfully */
+    Succeeded,
+    /** Async loading was canceled */
+    Canceled
+};
+
+DECLARE_DYNAMIC_DELEGATE_OneParam(FOnAssetLoaded, class UObject*, Loaded);
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnPackageLoaded, UPackage*, LoadedPackage, ERyAsyncLoadingResult, Result);

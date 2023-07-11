@@ -18,6 +18,7 @@
 #define CHECK_VALID_TIMER(World, TimerHandle) UAdvanceGameToolLibrary::CheckValidTimerHandle(World, TimerHandle)
 
 class UCanvasPanel;
+class UAGTFileHandle;
 
 /**
  * @class ADVANCE GAME TOOL LIBRARY
@@ -63,6 +64,43 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "ActionFiles")
     static bool FileLoadString(FString FileName, FString& Text);
+
+    /**
+         * Open a file handle for reading and writing to a file. Use the file handle object to seek, read, write, etc.
+         */
+    UFUNCTION(BlueprintCallable, Category = "ActionFiles")
+    static UAGTFileHandle* OpenFileHandle(UObject* outer, const FString filePath, const bool forRead, const bool forWrite, bool& success);
+
+    /**
+     * Write an array of bytes to a file
+     * @param filePath The full path to the file to write to
+     * @param allowOverwrite If true, if the file exists it will be overwritten, or the function will return false
+     * @param bytesOut The bytes to write out to the file
+     * @return True if success
+     */
+    UFUNCTION(BlueprintCallable, Category = "ActionFiles")
+    static bool WriteBytesToFile(const FString filePath, const bool allowOverwrite, const TArray<uint8>& bytesOut);
+
+    /**
+     * Read all bytes from a file and put them into bytesIn
+     * @param filePath The full path to the file to write to
+     * @param bytesIn The bytes to read in from the file
+     * @return True if success
+     */
+    UFUNCTION(BlueprintCallable, Category = "ActionFiles")
+    static bool ReadAllBytesFromFile(const FString filePath, TArray<uint8>& bytesIn);
+
+    /**
+     * Read bytes from a file and put them into bytesIn
+     * The default offset and numBytes will read the entire file. Change the parameters accordingly.
+     * @param filePath The full path to the file to write to
+     * @param bytesIn The bytes to read in from the file
+     * @param offset The offset in bytes into the file
+     * @param numBytes The number of bytes at the offset to read
+     * @return True if success
+     */
+    UFUNCTION(BlueprintCallable, Category = "ActionFiles")
+    static bool ReadBytesFromFile(const FString filePath, TArray<uint8>& bytesIn, const int64 offset = 0, const int64 numBytes = 99999999999);
 
 #pragma endregion
 
@@ -142,11 +180,193 @@ public:
     static void ParallelForTask(FBPParallelForSignature Task, int32 Num, bool ForceSingleThread, bool PumpRenderingThread);
 
 private:
-    /* Called when asset loading is finished */
+    /** @private Called when asset loading is finished */
     static void OnAssetLoadObjectComplete(TSoftObjectPtr<UObject> AssetObject, FAsyncAssetLoadSignature Callback);
 
-    /* Called when asset loading for actor spawn is finished */
+    /** @private  Called when asset loading for actor spawn is finished */
     static void OnSpawnActorComplete(UObject* WorldContextObject, TSoftClassPtr<AActor> AssetClass, FAdvanceActorParameters ActorParameters, FAsyncSpawnActorSignature Callback);
+
+public:
+    /** @public Remove all latent actions for an object. Latent actions are delays, async requests, etc. Use this with caution.
+	 This can be useful for stopping an actor completely (disabled all delays when turning tick off) **/
+    UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject"), Category = "ActionObject")
+    static void RemoveLatentActionsForObject(UObject* WorldContextObject, UObject* object);
+
+    /** @public Clear all timers running for an object. Use this with caution. **/
+    UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject"), Category = "ActionObject")
+    static void ClearAllTimersForObject(UObject* WorldContextObject, UObject* object);
+
+    /** @public Create a new object of objectClass **/
+    UFUNCTION(BlueprintCallable, Category = "ActionObject", Meta = (DeterminesOutputType = "objectClass", DynamicOutputParam = "objectOut"))
+    static void CreateObject(TSubclassOf<UObject> objectClass, UObject* outer, UObject*& objectOut);
+
+    /** @public Duplicate a current object **/
+    UFUNCTION(BlueprintCallable, Category = "ActionObject", Meta = (DeterminesOutputType = "objectClass", DynamicOutputParam = "objectOut"))
+    static void DuplicateObject(TSubclassOf<UObject> objectClass, UObject* object, UObject* outer, UObject*& objectOut);
+
+    /** @public Returns true if the Soft Object Reference is not null AND not pending kill */
+    UFUNCTION(BlueprintPure, Category = "ActionObject", meta = (BlueprintThreadSafe))
+    static bool IsLiveSoftObjectReference(const TSoftObjectPtr<UObject>& SoftObjectReference);
+
+    /** Returns string representation of reference, in form /package/path.assetname */
+    UFUNCTION(BlueprintPure, Category = "ActionObject", meta = (BlueprintThreadSafe))
+    static FString SoftObjectToString(const TSoftObjectPtr<UObject>& SoftObjectReference);
+
+    /**  
+    * @public Test if this does not point to a live UObject, but may in the future
+    *
+    * @return true if this does not point to a real object, but could possibly
+    */
+    UFUNCTION(BlueprintPure, Category = "ActionObject", meta = (BlueprintThreadSafe))
+    static bool IsSoftObjectPending(const TSoftObjectPtr<UObject>& SoftObjectReference);
+
+    /**  
+    * @public Test if this can never point to a live UObject
+    *
+    * @return true if this is explicitly pointing to no object
+    */
+    UFUNCTION(BlueprintPure, Category = "ActionObject", meta = (BlueprintThreadSafe))
+    static bool IsSoftObjectNull(const TSoftObjectPtr<UObject>& SoftObjectReference);
+
+    /**  
+    * @public Test if this points to a live UObject
+    *
+    * @return true if Get() would return a valid non-null pointer
+    */
+    UFUNCTION(BlueprintPure, Category = "ActionObject", meta = (BlueprintThreadSafe))
+    static bool IsSoftObjectValid(const TSoftObjectPtr<UObject>& SoftObjectReference);
+
+    /** @public  A call to see if a package is currently loaded and load that. If not loaded, tries to load the package.
+     * Package path is in this format: /Game/MyFolder/MyPackage
+     * Where /Game/ is the mounting point.
+     * Common mount points are:
+     * /Game/* : This is your projects primary content folder
+     * /Plugin/* : If a plugin has content the mounting point will be the name of the plugin
+     * /Engine/* : Content found in the engine
+     * **/
+    UFUNCTION(BlueprintCallable, Category = "ActionObject")
+    static UPackage* FindOrLoadPackage(const FString& PackageName);
+
+    // Loads an object in a package
+    UFUNCTION(BlueprintCallable, Category = "ActionObject")
+    static UObject* LoadObjectFromPackage(UPackage* package, const FString& objectName);
+
+    // Gets the package of an object. Returns None if this object isn't part of a package
+    UFUNCTION(BlueprintPure, Category = "ActionObject")
+    static UPackage* GetPackageOfObject(UObject* object);
+
+    // With a package, returns all objects within that package
+    // NOTE: This loads every asset within the package so it can be returned.
+    UFUNCTION(BlueprintCallable, Category = "ActionObject")
+    static void GetObjectsInPackage(UPackage* package, TArray<UObject*>& ObjectsOut);
+
+    /** 
+     * @public Tries to convert the supplied relative or absolute filename to a long package name/path starting with a root like /game
+     * This works on both package names and directories, and it does not validate that it actually exists on disk.
+     * 
+     * @param InFilename Filename to convert.
+     * @param OutPackageName The resulting long package name if the conversion was successful.
+     * @param OutFailureReason Description of an error if the conversion failed.
+     * @return Returns true if the supplied filename properly maps to one of the long package roots.
+     */
+    UFUNCTION(BlueprintCallable, Category = "ActionObject")
+    static bool TryConvertFilenameToLongPackageName(const FString& InFilename, FString& OutPackageName, FString& OutFailureReason);
+
+    /** @public A call to see if a package asset is currently loaded and load that. If not loaded, tries to load the package asset.
+     * Package path is in this format: /Game/MyFolder/MyPackage.MyAsset
+     * Where /Game/ is the mounting point.
+     * Common mount points are:
+     * /Game/* : This is your projects primary content folder
+     * /Plugin/* : If a plugin has content the mounting point will be the name of the plugin
+     * /Engine/* : Content found in the engine
+    **/
+    UFUNCTION(BlueprintCallable, Category = "ActionObject")
+    static UObject* LoadObjectWithFullPath(const FString& fullObjectPath);
+
+    UFUNCTION(BlueprintCallable, meta = (Latent = "", LatentInfo = "LatentInfo", WorldContext = "WorldContextObject", BlueprintInternalUseOnly = "true"), Category = "ActionObject")
+    static void LoadAssetPriority(UObject* WorldContextObject, const TSoftObjectPtr<UObject> Asset, const int32 Priority, FOnAssetLoaded OnLoaded, FLatentActionInfo LatentInfo);
+
+    UFUNCTION(BlueprintCallable, meta = (Latent = "", LatentInfo = "LatentInfo", WorldContext = "WorldContextObject", BlueprintInternalUseOnly = "true"), Category = "ActionObject")
+    static void LoadPackagePriority(UObject* WorldContextObject, const FString& PackagePath, const int32 Priority, const bool BlockOnLoad, FOnPackageLoaded OnLoaded, FLatentActionInfo LatentInfo);
+
+    /**
+     * @public This will insert a mount point at the head of the search chain (so it can overlap an existing mount point and win).
+     * This function can be used to mount a path to a simple mounting point name. ex:
+     * ../../../MyProject/Plugins/MyDLC/Content to /MyDLC/
+     *
+     * @param RootPath Logical Root Path. ex: /MyDLC/
+     * @param ContentPath Content Path on disk. ex: ../../../MyProject/Plugins/MyDLC/Content
+     */
+    UFUNCTION(BlueprintCallable, Category = "ActionObject")
+    static void RegisterMountPoint(const FString& RootPath, const FString& ContentPath);
+
+    /**
+     * @public This will remove a previously inserted mount point.
+     *
+     * @param RootPath Logical Root Path.
+     * @param ContentPath Content Path on disk.
+     */
+    UFUNCTION(BlueprintCallable, Category = "ActionObject")
+    static void UnRegisterMountPoint(const FString& RootPath, const FString& ContentPath);
+
+    /**
+     * @public Returns whether the specific logical root path is a valid mount point.
+     */
+    UFUNCTION(BlueprintPure, Category = "ActionObject")
+    static bool MountPointExists(const FString& RootPath);
+
+    /**
+     * @public Get the mount point for a given package path
+     * 
+     * @param InPackagePath The package path to get the mount point for
+     * @param InWithoutSlashes Optional parameters that keeps the slashes around the mount point if false
+     * @return FName corresponding to the mount point, or Empty if invalid
+     */
+    UFUNCTION(BlueprintPure, Category = "ActionObject")
+    static FName GetPackageMountPoint(const FString& InPackagePath, bool InWithoutSlashes = true);
+
+    // Return the parent class of a class
+    UFUNCTION(BlueprintPure, Category = "ActionObject")
+    static UClass* GetParentClass(UClass* Class);
+
+    // Return the class hierarchy in an array ordered from children to root parent
+    UFUNCTION(BlueprintPure, Category = "ActionObject")
+    static void GetClassHierarchy(UClass* Class, TArray<UClass*>& ClassHierarchy, const bool includeSelf = true);
+
+    // Returns the default object associated with this class.
+    UFUNCTION(BlueprintCallable, Category = "ActionObject")
+    static UObject* GetClassDefaultObject(TSubclassOf<UObject> TheClass);
+
+    /** @public Sets an objects property by name using reflection to a Value.
+     * @WARNING: You can do naughty things with this like setting native variables not exposed to blueprints. Beware!
+     * @NOTE: This only supports setting these types: Numeric (Int, Float, Byte, etc), Bool, LinearColor, Color, Vector, Rotator, String.
+     *       With struct types like Vector, the Value string must be in a text serializable form ex (X=20, Y=30, Z=40). Use ToString on the types for examples.
+     * @NOTE: If the property is numeric, ensure your Value can actually work with that type. If the value can be converted but precision is lost, no warnings will occur.
+    **/
+    UFUNCTION(BlueprintCallable, Category = "ActionObject", meta=(AdvancedDisplay = "3"))
+    static bool SetObjectPropertyValue(UObject* Object, const FName PropertyName, const FString& Value, const bool PrintWarnings = true);
+
+    // This object is a template for another object - treat like a class default object
+    UFUNCTION(BlueprintPure, Category = "ActionObject|Flags")
+    static bool ObjectHasFlag_ArchetypeObject(UObject* Object);
+
+    // Object is a CDO or Class Default Object. It exists as a template for object that will be created and can be used
+    // to get default values.
+    UFUNCTION(BlueprintPure, Category = "ActionObject|Flags")
+    static bool ObjectHasFlag_ClassDefaultObject(UObject* Object);
+
+    // Object has begun being destroyed
+    UFUNCTION(BlueprintPure, Category = "ActionObject|Flags")
+    static bool ObjectHasFlag_BeginDestroyed(UObject* Object);
+
+    // Object has finished being destroyed
+    UFUNCTION(BlueprintPure, Category = "ActionObject|Flags")
+    static bool ObjectHasFlag_FinishDestroyed(UObject* Object);
+
+    // Objects flagged with WasLoaded can be expected to have been loaded from a package and was not dynamically created.
+    // NOTE: Objects which were created for a package but not saved yet will not be set as "WasLoaded" until they are saved.
+    UFUNCTION(BlueprintPure, Category = "ActionObject|Flags")
+    static bool ObjectHasFlag_WasLoaded(UObject* Object);
 
 #pragma endregion
 
@@ -885,6 +1105,10 @@ public:
     UFUNCTION(BlueprintPure, Category = "StrHelper", meta = (DisplayName = "ToString (Int64)", CompactNodeTitle = "->", BlueprintAutocast))
     static FString Conv_Int64ToString(int64 InInt64);
 
+    /** Converts a TArray<uint8> value to a string */
+    UFUNCTION(BlueprintPure, Category = "StrHelper", meta = (DisplayName = "ToString (ArrayUint8)", CompactNodeTitle = "->", BlueprintAutocast))
+    static FString Conv_ArrayUint8ToString(const TArray<uint8>& ArrayUint8);
+
     /** Combines file paths */
     UFUNCTION(BlueprintPure, Category = "StrHelper", meta = (CommutativeAssociativeBinaryOperator = "true"))
     static FString CombineFilePaths(FString A, FString B);
@@ -911,7 +1135,6 @@ public:
 #pragma region ActionJSON
 
 public:
-
     /** @public Creates a json object
      * @return	The json object */
     UFUNCTION(BlueprintPure, Category = "Json", meta = (NativeMakeFunc))
@@ -1307,4 +1530,158 @@ private:
     UObject* CallOnObject = nullptr;
     FString CallFunctionName;
     EAsyncCallType CallType;
+};
+
+
+/**
+ * A handle to a file
+ * If this object is garbage collected or destroyed
+ */
+UCLASS(BlueprintType)
+class ADVANCEGAMETOOLS_API UAGTFileHandle : public UObject
+{
+    GENERATED_BODY()
+
+public:
+    UAGTFileHandle()
+        : Handle(nullptr), CanRead(false), CanWrite(false)
+    {
+    }
+
+    virtual void BeginDestroy() override
+    {
+        UObject::BeginDestroy();
+        if (Handle)
+        {
+            delete Handle;
+            Handle = nullptr;
+        }
+    }
+
+    /**
+     * Change the current write or read position.
+     */
+    UFUNCTION(BlueprintCallable)
+    bool Seek(const int64 newPosition)
+    {
+        if (!Handle)
+        {
+            return false;
+        }
+
+        return Handle->Seek(newPosition);
+    }
+
+    /**
+     * Seek the file handle by numBytes from the end
+     */
+    UFUNCTION(BlueprintCallable)
+    bool SeekFromEnd(const int64 numBytes)
+    {
+        if (!Handle)
+        {
+            return false;
+        }
+
+        return Handle->SeekFromEnd(numBytes);
+    }
+
+    /**
+     * Seek the file handle to the start
+     */
+    UFUNCTION(BlueprintCallable)
+    bool SeekToStart()
+    {
+        if (!Handle)
+        {
+            return false;
+        }
+
+        return Handle->Seek(0);
+    }
+
+    /**
+     * Seek the file handle to the end
+     */
+    UFUNCTION(BlueprintCallable)
+    bool SeekToEnd()
+    {
+        if (!Handle)
+        {
+            return false;
+        }
+
+        return Handle->SeekFromEnd(0);
+    }
+
+    /**
+     * Read from the file
+     */
+    UFUNCTION(BlueprintCallable)
+    bool Read(TArray<uint8>& bytesTo, const int64 numBytes)
+    {
+        if (!Handle || !CanRead)
+        {
+            return false;
+        }
+
+        const int64 numToRead = FMath::Min(Handle->Size() - Handle->Tell(), numBytes);
+        if (numToRead <= 0)
+        {
+            return false;
+        }
+
+        bytesTo.SetNum(numToRead);
+        return Handle->Read(bytesTo.GetData(), bytesTo.Num());
+    }
+
+    /**
+     * Write to the file
+     */
+    UFUNCTION(BlueprintCallable)
+    bool Write(const TArray<uint8>& bytesOut)
+    {
+        if (!Handle || bytesOut.Num() == 0 || !CanWrite)
+        {
+            return false;
+        }
+
+        return Handle->Write(bytesOut.GetData(), bytesOut.Num());
+    }
+
+    /**
+     * Return the size of the file
+     */
+    UFUNCTION(BlueprintPure)
+    int64 Size() const
+    {
+        if (!Handle)
+        {
+            return 0;
+        }
+
+        return Handle->Size();
+    }
+
+    /**
+     * Closes the file handle. No further operations can be performed with this handle once this is called.
+     */
+    UFUNCTION(BlueprintCallable)
+    void Close()
+    {
+        if (Handle)
+        {
+            delete Handle;
+            Handle = nullptr;
+        }
+    }
+
+private:
+    // The handle to the file. If this object is destroyed the file handle will go as well.
+    IFileHandle* Handle;
+
+    bool CanRead;
+    bool CanWrite;
+
+    friend class UAdvanceGameToolLibrary;
 };

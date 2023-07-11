@@ -1,5 +1,7 @@
 ﻿/** Copyright Mark Veligod. Published in 2023. **/
 
+#include <string>
+
 #include "AdvanceGameTools/Library/AdvanceGameToolLibrary.h"
 #include "Misc/Paths.h"
 #include "Internationalization/StringTable.h"
@@ -197,6 +199,12 @@ FText UAdvanceGameToolLibrary::GetTextFromStringTableID(FName TableID, const FSt
 FString UAdvanceGameToolLibrary::Conv_Int64ToString(const int64 InInt64)
 {
     return FString::Printf(TEXT("%lld"), InInt64);
+}
+
+FString UAdvanceGameToolLibrary::Conv_ArrayUint8ToString(const TArray<uint8>& ArrayUint8)
+{
+    FString Result = FString(ArrayUint8.Num(), UTF8_TO_TCHAR(ArrayUint8.GetData()));
+    return Result;
 }
 
 FString UAdvanceGameToolLibrary::CombineFilePaths(FString A, FString B)
