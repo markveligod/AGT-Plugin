@@ -333,14 +333,14 @@ FVector UAdvanceGameToolLibrary::ProjectPointOnLine(const FVector& LineOrigin, c
     return LineOrigin + (SafeDir * ((Point - LineOrigin) | SafeDir));
 }
 
-void UAdvanceGameToolLibrary::ClosestPointsOfLineSegments(const FVector& Line1Start, const FVector& Line1End, const FVector& Line2Start, const FVector& Line2End, FVector& LinePoint1,
-    FVector& LinePoint2)
+void UAdvanceGameToolLibrary::ClosestPointsOfLineSegments(
+    const FVector& Line1Start, const FVector& Line1End, const FVector& Line2Start, const FVector& Line2End, FVector& LinePoint1, FVector& LinePoint2)
 {
     FMath::SegmentDistToSegmentSafe(Line1Start, Line1End, Line2Start, Line2End, LinePoint1, LinePoint2);
 }
 
-bool UAdvanceGameToolLibrary::ClosestPointsOnTwoLines(const FVector& LinePoint1, const FVector& LineVec1, const FVector& LinePoint2, const FVector& LineVec2, FVector& ClosestPointLine1,
-    FVector& ClosestPointLine2)
+bool UAdvanceGameToolLibrary::ClosestPointsOnTwoLines(
+    const FVector& LinePoint1, const FVector& LineVec1, const FVector& LinePoint2, const FVector& LineVec2, FVector& ClosestPointLine1, FVector& ClosestPointLine2)
 {
     const float a = FVector::DotProduct(LineVec1, LineVec1);
     const float b = FVector::DotProduct(LineVec1, LineVec2);
@@ -348,7 +348,7 @@ bool UAdvanceGameToolLibrary::ClosestPointsOnTwoLines(const FVector& LinePoint1,
 
     const float d = a * e - b * b;
 
-    //lines are not parallel
+    // lines are not parallel
     if (d != 0.0f)
     {
         const FVector r = LinePoint1 - LinePoint2;

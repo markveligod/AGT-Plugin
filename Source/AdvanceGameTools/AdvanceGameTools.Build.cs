@@ -22,7 +22,7 @@ public class AdvanceGameTools : ModuleRules
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] {
-            "CoreUObject", "Engine", "Slate", "SlateCore", "ApplicationCore", "NavigationSystem", "EngineSettings", "UMG", "AIModule", "Json"
+            "CoreUObject", "Engine", "Slate", "SlateCore", "ApplicationCore", "NavigationSystem", "EngineSettings", "UMG", "AIModule", "Json", "JsonUtilities", "XmlParser"
             // ... add private dependencies that you statically link with here ...
         });
 

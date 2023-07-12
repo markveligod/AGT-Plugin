@@ -3,6 +3,7 @@
 #include "AdvanceGameTools/Library/AdvanceGameToolLibrary.h"
 #include "NavigationSystem.h"
 #include "Algo/ForEach.h"
+#include "GameFramework/Character.h"
 
 #pragma region NavSystem
 

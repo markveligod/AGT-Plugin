@@ -21,21 +21,21 @@ void UAdvanceGameToolLibrary::InfoLog(const FString& Message)
 
 void UAdvanceGameToolLibrary::ActorErrorLog(AActor* Actor, const FString& Message)
 {
-    if( !IsValid(Actor) ) return; 
+    if (!IsValid(Actor)) return;
 
     ErrorLog(Actor->GetName() + ": " + Message);
 }
 
 void UAdvanceGameToolLibrary::ActorWarningLog(AActor* Actor, const FString& Message)
 {
-    if( !IsValid(Actor) ) return; 
+    if (!IsValid(Actor)) return;
 
     WarningLog(Actor->GetName() + ": " + Message);
 }
 
 void UAdvanceGameToolLibrary::ActorInfoLog(AActor* Actor, const FString& Message)
 {
-    if( !IsValid(Actor) ) return; 
+    if (!IsValid(Actor)) return;
 
     InfoLog(Actor->GetName() + ": " + Message);
 }

@@ -77,7 +77,6 @@ void USimpleMoveToComponent::TickComponent(float DeltaTime, ELevelTick TickType,
     }
 
 #endif
-    
 }
 
 #pragma endregion

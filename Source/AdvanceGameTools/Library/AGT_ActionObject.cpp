@@ -7,7 +7,7 @@
 
 struct FLoadAssetPriorityActionBase : FPendingLatentAction
 {
-    // @TODO: it would be good to have static/global manager? 
+    // @TODO: it would be good to have static/global manager?
     FSoftObjectPath SoftObjectPath;
     FStreamableManager StreamableManager;
     TSharedPtr<FStreamableHandle> Handle;
@@ -18,10 +18,7 @@ struct FLoadAssetPriorityActionBase : FPendingLatentAction
     virtual void OnLoaded() PURE_VIRTUAL(FLoadAssetPriorityActionBase::OnLoaded, );
 
     FLoadAssetPriorityActionBase(const FSoftObjectPath& InSoftObjectPath, const int32 Priority, const FLatentActionInfo& InLatentInfo)
-        : SoftObjectPath(InSoftObjectPath)
-        , ExecutionFunction(InLatentInfo.ExecutionFunction)
-        , OutputLink(InLatentInfo.Linkage)
-        , CallbackTarget(InLatentInfo.CallbackTarget)
+        : SoftObjectPath(InSoftObjectPath), ExecutionFunction(InLatentInfo.ExecutionFunction), OutputLink(InLatentInfo.Linkage), CallbackTarget(InLatentInfo.CallbackTarget)
     {
         Handle = StreamableManager.RequestAsyncLoad(SoftObjectPath, FStreamableDelegate(), Priority);
     }
@@ -45,10 +42,7 @@ struct FLoadAssetPriorityActionBase : FPendingLatentAction
     }
 
 #if WITH_EDITOR
-    virtual FString GetDescription() const override
-    {
-        return FString::Printf(TEXT("Load Asset Priority Action Base: %s"), *SoftObjectPath.ToString());
-    }
+    virtual FString GetDescription() const override { return FString::Printf(TEXT("Load Asset Priority Action Base: %s"), *SoftObjectPath.ToString()); }
 #endif
 };
 
@@ -67,17 +61,13 @@ struct FLoadPackagePriorityActionBase : FPendingLatentAction
     virtual void OnLoaded() PURE_VIRTUAL(FLoadPackagePriorityActionBase::OnLoaded, );
 
     FLoadPackagePriorityActionBase(const FString& packagePath, const int32 priority, const bool blockOnLoad, const FLatentActionInfo& inLatentInfo)
-        : PackagePath(packagePath)
-        , ExecutionFunction(inLatentInfo.ExecutionFunction)
-        , OutputLink(inLatentInfo.Linkage)
-        , CallbackTarget(inLatentInfo.CallbackTarget)
-        , Result(EAsyncLoadingResult::Failed)
-        , LoadedPackage(nullptr)
+        : PackagePath(packagePath), ExecutionFunction(inLatentInfo.ExecutionFunction), OutputLink(inLatentInfo.Linkage), CallbackTarget(inLatentInfo.CallbackTarget),
+          Result(EAsyncLoadingResult::Failed), LoadedPackage(nullptr)
     {
         LoadCB.BindRaw(this, &FLoadPackagePriorityActionBase::OnPackageLoadCompleteCB);
 #if ENGINE_MAJOR_VERSION >= 5
         FPackagePath packagePathStruct;
-        if(FPackagePath::TryFromPackageName(*PackagePath, packagePathStruct))
+        if (FPackagePath::TryFromPackageName(*PackagePath, packagePathStruct))
         {
             LoadRequest = LoadPackageAsync(packagePathStruct, NAME_None, LoadCB, PKG_None, INDEX_NONE, priority);
         }
@@ -88,9 +78,9 @@ struct FLoadPackagePriorityActionBase : FPendingLatentAction
 #else
         LoadRequest = LoadPackageAsync(PackagePath, nullptr, nullptr, LoadCB, PKG_None, INDEX_NONE, priority);
 #endif
-        if(LoadRequest != INDEX_NONE)
+        if (LoadRequest != INDEX_NONE)
         {
-            if(blockOnLoad)
+            if (blockOnLoad)
             {
                 FlushAsyncLoading(LoadRequest);
             }
@@ -115,10 +105,7 @@ struct FLoadPackagePriorityActionBase : FPendingLatentAction
     }
 
 #if WITH_EDITOR
-    virtual FString GetDescription() const override
-    {
-        return FString::Printf(TEXT("Load Package Priority Action Base: %s"), *PackagePath);
-    }
+    virtual FString GetDescription() const override { return FString::Printf(TEXT("Load Package Priority Action Base: %s"), *PackagePath); }
 #endif
 };
 
@@ -287,18 +274,18 @@ void UAdvanceGameToolLibrary::ClearAllTimersForObject(UObject* WorldContextObjec
 
 void UAdvanceGameToolLibrary::CreateObject(TSubclassOf<UObject> objectClass, UObject* outer, UObject*& objectOut)
 {
-    if(!objectClass)
+    if (!objectClass)
     {
         objectOut = nullptr;
         return;
     }
-    
+
     objectOut = NewObject<UObject>(outer ? outer : GetTransientPackage(), objectClass);
 }
 
 void UAdvanceGameToolLibrary::DuplicateObject(TSubclassOf<UObject> objectClass, UObject* Object, UObject* outer, UObject*& objectOut)
 {
-    if(!Object)
+    if (!Object)
     {
         objectOut = nullptr;
         return;
@@ -308,8 +295,7 @@ void UAdvanceGameToolLibrary::DuplicateObject(TSubclassOf<UObject> objectClass, 
 
 bool UAdvanceGameToolLibrary::IsLiveSoftObjectReference(const TSoftObjectPtr<UObject>& SoftObjectReference)
 {
-    if(SoftObjectReference.IsNull())
-        return false;
+    if (SoftObjectReference.IsNull()) return false;
 
     const TPersistentObjectPtr<FSoftObjectPath> persistObjPtr(SoftObjectReference.ToSoftObjectPath());
     return persistObjPtr.Get(false) != nullptr;
@@ -338,7 +324,7 @@ bool UAdvanceGameToolLibrary::IsSoftObjectValid(const TSoftObjectPtr<UObject>& S
 UPackage* UAdvanceGameToolLibrary::FindOrLoadPackage(const FString& PackageName)
 {
     UPackage* Pkg = FindPackage(nullptr, *PackageName);
-    if(!Pkg)
+    if (!Pkg)
     {
         Pkg = LoadPackage(nullptr, *PackageName, LOAD_NoWarn | LOAD_Quiet);
     }
@@ -347,7 +333,7 @@ UPackage* UAdvanceGameToolLibrary::FindOrLoadPackage(const FString& PackageName)
 
 UObject* UAdvanceGameToolLibrary::LoadObjectFromPackage(UPackage* package, const FString& objectName)
 {
-    if(!package)
+    if (!package)
     {
         return nullptr;
     }
@@ -357,28 +343,27 @@ UObject* UAdvanceGameToolLibrary::LoadObjectFromPackage(UPackage* package, const
 
 UPackage* UAdvanceGameToolLibrary::GetPackageOfObject(UObject* Object)
 {
-    if(!Object)
-        return nullptr;
+    if (!Object) return nullptr;
 
     return Object->GetOutermost();
 }
 
 void UAdvanceGameToolLibrary::GetObjectsInPackage(UPackage* package, TArray<UObject*>& ObjectsOut)
 {
-    if(!package)
+    if (!package)
     {
         return;
     }
 
-    if(!package->IsFullyLoaded())
+    if (!package->IsFullyLoaded())
     {
         package->FullyLoad();
     }
 
-    for(TObjectIterator<UObject> ObjIt; ObjIt; ++ObjIt)
+    for (TObjectIterator<UObject> ObjIt; ObjIt; ++ObjIt)
     {
         UObject* Object = *ObjIt;
-        if(Object->IsIn(package))
+        if (Object->IsIn(package))
         {
             ObjectsOut.Add(Object);
         }
@@ -396,17 +381,17 @@ UObject* UAdvanceGameToolLibrary::LoadObjectWithFullPath(const FString& fullObje
 
 #if WITH_EDITOR
     // Look at core redirects if we didn't find the Object
-    if(!LoadedObject)
+    if (!LoadedObject)
     {
         FSoftObjectPath FixupObjectPath = fullObjectPath;
-        if(FixupObjectPath.FixupCoreRedirects())
+        if (FixupObjectPath.FixupCoreRedirects())
         {
             LoadedObject = LoadObject<UObject>(nullptr, *FixupObjectPath.ToString());
         }
     }
 #endif
 
-    while(const UObjectRedirector* Redirector = Cast<UObjectRedirector>(LoadedObject))
+    while (const UObjectRedirector* Redirector = Cast<UObjectRedirector>(LoadedObject))
     {
         LoadedObject = Redirector->DestinationObject;
     }
@@ -421,9 +406,9 @@ void UAdvanceGameToolLibrary::LoadAssetPriority(UObject* WorldContextObject, con
         FOnAssetLoaded OnLoadedCallback;
 
         FLoadAssetAction(const FSoftObjectPath& InSoftObjectPath, const int32 Priority, FOnAssetLoaded InOnLoadedCallback, const FLatentActionInfo& InLatentInfo)
-            : FLoadAssetPriorityActionBase(InSoftObjectPath, Priority, InLatentInfo)
-            , OnLoadedCallback(InOnLoadedCallback)
-        {}
+            : FLoadAssetPriorityActionBase(InSoftObjectPath, Priority, InLatentInfo), OnLoadedCallback(InOnLoadedCallback)
+        {
+        }
 
         virtual void OnLoaded() override
         {
@@ -442,22 +427,19 @@ void UAdvanceGameToolLibrary::LoadAssetPriority(UObject* WorldContextObject, con
     }
 }
 
-void UAdvanceGameToolLibrary::LoadPackagePriority(UObject* WorldContextObject, const FString& PackagePath, const int32 Priority, const bool BlockOnLoad, FOnPackageLoaded OnLoaded,
-    FLatentActionInfo LatentInfo)
+void UAdvanceGameToolLibrary::LoadPackagePriority(
+    UObject* WorldContextObject, const FString& PackagePath, const int32 Priority, const bool BlockOnLoad, FOnPackageLoaded OnLoaded, FLatentActionInfo LatentInfo)
 {
     struct FLoadPackageAction : FLoadPackagePriorityActionBase
     {
         FOnPackageLoaded OnLoadedCallback;
 
         FLoadPackageAction(const FString& packagePath, const int32 priority, const bool blockOnLoad, FOnPackageLoaded onPackageLoaded, const FLatentActionInfo& inLatentInfo)
-            : FLoadPackagePriorityActionBase(packagePath, priority, blockOnLoad, inLatentInfo)
-            , OnLoadedCallback(onPackageLoaded)
-        {}
-
-        virtual void OnLoaded() override
+            : FLoadPackagePriorityActionBase(packagePath, priority, blockOnLoad, inLatentInfo), OnLoadedCallback(onPackageLoaded)
         {
-            OnLoadedCallback.ExecuteIfBound(LoadedPackage, static_cast<ERyAsyncLoadingResult>(Result));
         }
+
+        virtual void OnLoaded() override { OnLoadedCallback.ExecuteIfBound(LoadedPackage, static_cast<ERyAsyncLoadingResult>(Result)); }
     };
 
     if (UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull))
@@ -492,8 +474,7 @@ FName UAdvanceGameToolLibrary::GetPackageMountPoint(const FString& InPackagePath
 
 UClass* UAdvanceGameToolLibrary::GetParentClass(UClass* Class)
 {
-    if(!Class)
-        return nullptr;
+    if (!Class) return nullptr;
 
     return Class->GetSuperClass();
 }
@@ -501,11 +482,11 @@ UClass* UAdvanceGameToolLibrary::GetParentClass(UClass* Class)
 void UAdvanceGameToolLibrary::GetClassHierarchy(UClass* Class, TArray<UClass*>& ClassHierarchy, const bool includeSelf)
 {
     UClass* NextClass = Class;
-    if(NextClass && includeSelf)
+    if (NextClass && includeSelf)
     {
         ClassHierarchy.Add(NextClass);
     }
-    while(NextClass && NextClass->GetSuperClass())
+    while (NextClass && NextClass->GetSuperClass())
     {
         ClassHierarchy.Add(NextClass->GetSuperClass());
         NextClass = NextClass->GetSuperClass();
@@ -514,7 +495,7 @@ void UAdvanceGameToolLibrary::GetClassHierarchy(UClass* Class, TArray<UClass*>& 
 
 UObject* UAdvanceGameToolLibrary::GetClassDefaultObject(TSubclassOf<UObject> TheClass)
 {
-    if(!TheClass)
+    if (!TheClass)
     {
         return nullptr;
     }
@@ -524,34 +505,34 @@ UObject* UAdvanceGameToolLibrary::GetClassDefaultObject(TSubclassOf<UObject> The
 
 bool UAdvanceGameToolLibrary::SetObjectPropertyValue(UObject* Object, const FName PropertyName, const FString& Value, const bool PrintWarnings)
 {
-    if(!Object)
+    if (!Object)
     {
         return false;
     }
 
 #if ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION < 25
-    UProperty *FoundProperty = Object->GetClass()->FindPropertyByName(PropertyName);
+    UProperty* FoundProperty = Object->GetClass()->FindPropertyByName(PropertyName);
 #else
-    FProperty *FoundProperty = Object->GetClass()->FindPropertyByName(PropertyName);
+    FProperty* FoundProperty = Object->GetClass()->FindPropertyByName(PropertyName);
 #endif
-    if(FoundProperty)
+    if (FoundProperty)
     {
-        void *PropertyPtr = FoundProperty->ContainerPtrToValuePtr<void>(Object);
+        void* PropertyPtr = FoundProperty->ContainerPtrToValuePtr<void>(Object);
         check(PropertyPtr);
 #if ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION < 25
-        if(UNumericProperty *pIntProp = Cast<UNumericProperty>(FoundProperty))
+        if (UNumericProperty* pIntProp = Cast<UNumericProperty>(FoundProperty))
 #else
-        if(FNumericProperty *pIntProp = CastField<FNumericProperty>(FoundProperty))
+        if (FNumericProperty* pIntProp = CastField<FNumericProperty>(FoundProperty))
 #endif
         {
-            if(Value.IsNumeric())
+            if (Value.IsNumeric())
             {
                 pIntProp->SetNumericPropertyValueFromString(PropertyPtr, *Value);
                 return true;
             }
             else
             {
-                if(PrintWarnings)
+                if (PrintWarnings)
                 {
                     WarningLog(FString::Printf(TEXT("SetObjectPropertyValue: Property named '%s' is numeric but the Value string is not"), *PropertyName.ToString()));
                 }
@@ -559,54 +540,54 @@ bool UAdvanceGameToolLibrary::SetObjectPropertyValue(UObject* Object, const FNam
             }
         }
 #if ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION < 25
-        else if(UBoolProperty *pBoolProp = Cast<UBoolProperty>(FoundProperty))
+        else if (UBoolProperty* pBoolProp = Cast<UBoolProperty>(FoundProperty))
 #else
-        else if(FBoolProperty *pBoolProp = CastField<FBoolProperty>(FoundProperty))
+        else if (FBoolProperty* pBoolProp = CastField<FBoolProperty>(FoundProperty))
 #endif
         {
             pBoolProp->SetPropertyValue(PropertyPtr, FCString::ToBool(*Value));
             return true;
         }
 #if ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION < 25
-        else if(UStructProperty* StructProperty = Cast<UStructProperty>(FoundProperty))
+        else if (UStructProperty* StructProperty = Cast<UStructProperty>(FoundProperty))
 #else
-        else if(FStructProperty* StructProperty = CastField<FStructProperty>(FoundProperty))
+        else if (FStructProperty* StructProperty = CastField<FStructProperty>(FoundProperty))
 #endif
         {
             FName StructType = StructProperty->Struct->GetFName();
-            if(StructType == NAME_LinearColor)
+            if (StructType == NAME_LinearColor)
             {
-                FLinearColor *pCol = (FLinearColor*)PropertyPtr;
+                FLinearColor* pCol = (FLinearColor*)PropertyPtr;
                 return pCol->InitFromString(Value);
             }
-            else if(StructType == NAME_Color)
+            else if (StructType == NAME_Color)
             {
-                FColor *pCol = (FColor*)PropertyPtr;
+                FColor* pCol = (FColor*)PropertyPtr;
                 return pCol->InitFromString(Value);
             }
-            else if(StructType == NAME_Vector)
+            else if (StructType == NAME_Vector)
             {
-                FVector *pVec = (FVector*)PropertyPtr;
+                FVector* pVec = (FVector*)PropertyPtr;
                 return pVec->InitFromString(Value);
             }
-            else if(StructType == NAME_Rotator)
+            else if (StructType == NAME_Rotator)
             {
-                FRotator *pRot = (FRotator*)PropertyPtr;
+                FRotator* pRot = (FRotator*)PropertyPtr;
                 return pRot->InitFromString(Value);
             }
-            else if(StructType == NAME_Transform)
+            else if (StructType == NAME_Transform)
             {
-                FTransform *pTrans = (FTransform*)PropertyPtr;
+                FTransform* pTrans = (FTransform*)PropertyPtr;
                 return pTrans->InitFromString(Value);
             }
         }
 
-        if(PrintWarnings)
+        if (PrintWarnings)
         {
             WarningLog(FString::Printf(TEXT("SetObjectPropertyValue: Unsupported property named '%s'"), *PropertyName.ToString()));
         }
     }
-    else if(PrintWarnings)
+    else if (PrintWarnings)
     {
         WarningLog(FString::Printf(TEXT("SetObjectPropertyValue: Unable to find property in Object named '%s'"), *PropertyName.ToString()));
     }

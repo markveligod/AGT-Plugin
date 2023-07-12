@@ -7,6 +7,7 @@
 #include "AdvanceGameTools/AGTDataTypes.h"
 #include "Misc/OutputDeviceNull.h"
 #include "Kismet/BlueprintAsyncActionBase.h"
+#include "XmlNode.h"
 #include "AdvanceGameToolLibrary.generated.h"
 
 /** Preprocesses for timers **/
@@ -38,14 +39,12 @@ public:
     UFUNCTION(BlueprintCallable, Category = "ActionLogging")
     static void InfoLog(const FString& Message);
 
-
     UFUNCTION(BlueprintCallable, Category = "ActionLogging")
     static void ActorErrorLog(AActor* Actor, const FString& Message);
     UFUNCTION(BlueprintCallable, Category = "ActionLogging")
     static void ActorWarningLog(AActor* Actor, const FString& Message);
     UFUNCTION(BlueprintCallable, Category = "ActionLogging")
     static void ActorInfoLog(AActor* Actor, const FString& Message);
-
 
     UFUNCTION(BlueprintCallable, Category = "ActionLogging")
     static void DebugLogError(const FString& Message);
@@ -66,8 +65,8 @@ public:
     static bool FileLoadString(FString FileName, FString& Text);
 
     /**
-         * Open a file handle for reading and writing to a file. Use the file handle object to seek, read, write, etc.
-         */
+     * Open a file handle for reading and writing to a file. Use the file handle object to seek, read, write, etc.
+     */
     UFUNCTION(BlueprintCallable, Category = "ActionFiles")
     static UAGTFileHandle* OpenFileHandle(UObject* outer, const FString filePath, const bool forRead, const bool forWrite, bool& success);
 
@@ -101,6 +100,352 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "ActionFiles")
     static bool ReadBytesFromFile(const FString filePath, TArray<uint8>& bytesIn, const int64 offset = 0, const int64 numBytes = 99999999999);
+
+#pragma region Paths
+
+public:
+    UFUNCTION(BlueprintPure, meta = (DisplayName = "GetEngineDirectories", CompactNodeTitle = "EngineDirs", Keywords = "File plugin path engine directory", ToolTip = "Gets the engine directories"),
+        Category = "ActionFiles|Path")
+    static FEnginePath GetEngineDirectories();
+
+    UFUNCTION(BlueprintPure,
+        meta = (DisplayName = "GetProjectDirectories", CompactNodeTitle = "ProjectDirs", Keywords = "File plugin path project directory", ToolTip = "Gets the project directories"),
+        Category = "ActionFiles|Path")
+    static FProjectPath GetProjectDirectories();
+
+#pragma endregion
+
+#pragma region TextFile
+
+public:
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "ReadTextFile", CompactNodeTitle = "ReadText", Keywords = "File plugin read text", ToolTip = "Read a standard text file"),
+        Category = "ActionFiles|Text")
+    static bool ReadText(FString Path, FString& Output);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "WriteTextFile", CompactNodeTitle = "WriteText", Keywords = "File plugin write text", ToolTip = "Save a standard text file"),
+        Category = "ActionFiles|Text")
+    static bool SaveText(FString Path, FString Text, FString& Error, bool Append = false, bool Force = false);
+    UFUNCTION(BlueprintCallable,
+        meta = (DisplayName = "ReadLineFile", CompactNodeTitle = "ReadLine", Keywords = "File plugin read text lines pattern", ToolTip = "Read the lines of a standard text file"),
+        Category = "ActionFiles|Text")
+    static bool ReadLine(FString Path, FString Pattern, TArray<FString>& Lines);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "WriteLineFile", CompactNodeTitle = "WriteLine", Keywords = "File plugin write text lines", ToolTip = "Save lines in a standard text file"),
+        Category = "ActionFiles|Text")
+    static bool SaveLine(FString Path, const TArray<FString>& Text, FString& Error, bool Append = false, bool Force = false);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "ReadByteFile", CompactNodeTitle = "ReadByte", Keywords = "File plugin read byte", ToolTip = "Read byte file"), Category = "ActionFiles|Byte")
+    static bool ReadByte(FString Path, TArray<uint8>& Bytes);
+    UFUNCTION(
+        BlueprintCallable, meta = (DisplayName = "WriteByteFile", CompactNodeTitle = "WriteByte", Keywords = "File plugin write byte", ToolTip = "Save byte to file"), Category = "ActionFiles|Byte")
+    static bool SaveByte(FString Path, const TArray<uint8>& Bytes, FString& Error, bool Append = false, bool Force = false);
+
+#pragma endregion
+
+#pragma region Base64
+
+public:
+    UFUNCTION(BlueprintPure, meta = (DisplayName = "StrToBase64", CompactNodeTitle = "ToBase64", Keywords = "File plugin string convert base64 encode", ToolTip = "Encodes a string to base64"),
+        Category = "ActionFiles|Text")
+    static FString StringToBase64(const FString Source);
+    UFUNCTION(BlueprintPure, meta = (DisplayName = "StrFromBase64", CompactNodeTitle = "FromBase64", Keywords = "File plugin string convert decode base64", ToolTip = "Decodes a string from base64"),
+        Category = "ActionFiles|Text")
+    static bool StringFromBase64(FString Base64Str, FString& Result);
+    UFUNCTION(BlueprintPure, meta = (DisplayName = "BytesToBase64", CompactNodeTitle = "ToBase64", Keywords = "File plugin bytes convert base64 encode", ToolTip = "Encodes a byte array to base64"),
+        Category = "ActionFiles|Byte")
+    static FString BytesToBase64(const TArray<uint8> Bytes);
+    UFUNCTION(BlueprintPure,
+        meta = (DisplayName = "BytesFromBase64", CompactNodeTitle = "FromBase64", Keywords = "File plugin bytes convert base64 decode", ToolTip = "Decodes a byte array from base64"),
+        Category = "ActionFiles|Byte")
+    static bool BytesFromBase64(const FString Source, TArray<uint8>& Out);
+
+#pragma endregion
+
+#pragma region CSVFile
+
+public:
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "WriteCSVFile", CompactNodeTitle = "WriteCSV", Keywords = "File plugin write csv", ToolTip = "Save a csv file"), Category = "ActionFiles|CSV")
+    static bool SaveCSV(FString Path, TArray<FString> Headers, TArray<FString> Data, int32& Total, bool Force = false);
+
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "ReadCSVFile", CompactNodeTitle = "ReadCSV", Keywords = "File plugin read csv", ToolTip = "Read a csv file"), Category = "ActionFiles|CSV")
+    static bool ReadCSV(FString Path, TArray<FString>& Headers, TArray<FString>& Data, int32& Total, bool HeaderFirst = true);
+
+#pragma endregion
+
+#pragma region CSVConvert
+
+public:
+    UFUNCTION(
+        BlueprintCallable, meta = (DisplayName = "StringToCSV", CompactNodeTitle = "StrToCSV", Keywords = "File plugin string csv", ToolTip = "convert a string to csv"), Category = "ActionFiles|CSV")
+    static bool StringToCSV(FString Content, TArray<FString>& Headers, TArray<FString>& Data, int32& Total, bool HeaderFirst = true);
+
+    UFUNCTION(
+        BlueprintCallable, meta = (DisplayName = "CSVToString", CompactNodeTitle = "CSVToStr", Keywords = "File plugin csv string", ToolTip = "convert a csv to string"), Category = "ActionFiles|CSV")
+    static bool CSVToString(FString& Result, TArray<FString> Headers, TArray<FString> Data, int32& Total);
+
+#pragma endregion
+
+#pragma region XMLFile
+
+public:
+    UFUNCTION(BlueprintCallable, Category = "ActionFiles|XMLFile", CustomThunk, meta = (CustomStructureParam = "InStruct"))
+    static void StructToXML(FString& XML, bool& Success, const UStruct* InStruct);
+    DECLARE_FUNCTION(execStructToXML)
+    {
+        P_GET_PROPERTY_REF(FStrProperty, XML);
+        P_GET_UBOOL_REF(Success);
+
+        Stack.Step(Stack.Object, NULL);
+
+        FProperty* Property = Stack.MostRecentProperty;
+        void* Ptr = Stack.MostRecentPropertyAddress;
+
+        P_FINISH;
+
+        Success = UAdvanceGameToolLibrary::AnyStructToXmlString(Property, Ptr, XML);
+    }
+
+    UFUNCTION(BlueprintCallable, Category = "ActionFiles|XMLFile", CustomThunk, meta = (CustomStructureParam = "OutStruct"))
+    static void XMLToStruct(const FString& Xml, bool& Success, UStruct*& OutStruct);
+    DECLARE_FUNCTION(execXMLToStruct)
+    {
+        // P_GET_SOFTCLASS_REF(int32, Total);
+        P_GET_PROPERTY(FStrProperty, Xml);
+        P_GET_UBOOL_REF(Success);
+
+        Stack.Step(Stack.Object, NULL);
+
+        FProperty* Property = Stack.MostRecentProperty;
+        void* Ptr = Stack.MostRecentPropertyAddress;
+
+        P_FINISH;
+
+        Success = UAdvanceGameToolLibrary::XmlStringToAnyStruct(Property, Ptr, Xml);
+    }
+
+    // xml v2
+    static bool AnyStructToXmlString(FProperty* Property, void* ValuePtr, FString& Xml);
+    static FString AnyStructToXmlValue(FProperty* Property, TSharedPtr<FJsonValue> Value, int32 Depth);
+    static FString& CreateTagNode(FString Tag, FString& Content, int32 Depth, bool WithCR);
+    static bool XmlStringToAnyStruct(FProperty* Property, void* ValuePtr, const FString& Xml);
+    static TSharedRef<FJsonValue> XmlNodeToAnyStruct(FProperty* Property, FXmlNode* Node);
+    // xml escape
+    static FString XmlEscapeChars(FString Source);
+    static FString XmlConvertChars(FString Source);
+
+#pragma endregion
+
+#pragma region JSONFile
+
+public:
+    UFUNCTION(BlueprintCallable, Category = "ActionFiles|JSONFile", CustomThunk, meta = (CustomStructureParam = "InStruct"))
+    static void StructToJson(FString& Json, bool& Success, const UStruct* InStruct);
+    DECLARE_FUNCTION(execStructToJson)
+    {
+        P_GET_PROPERTY_REF(FStrProperty, Json);
+        P_GET_UBOOL_REF(Success);
+
+        Stack.Step(Stack.Object, NULL);
+
+        FProperty* Prop = Stack.MostRecentProperty;
+        void* Ptr = Stack.MostRecentPropertyAddress;
+
+        P_FINISH;
+
+        Success = UAdvanceGameToolLibrary::AnyStructToJsonString(Prop, Ptr, Json);
+    }
+
+    UFUNCTION(BlueprintCallable, Category = "ActionFiles|JSONFile", CustomThunk, meta = (CustomStructureParam = "OutStruct"))
+    static void JsonToStruct(const FString& Json, bool& Success, UStruct*& OutStruct);
+    DECLARE_FUNCTION(execJsonToStruct)
+    {
+        // P_GET_SOFTCLASS_REF(int32, Total);
+        P_GET_PROPERTY(FStrProperty, Json);
+        P_GET_UBOOL_REF(Success);
+
+        Stack.Step(Stack.Object, NULL);
+
+        FProperty* Prop = Stack.MostRecentProperty;
+        void* Ptr = Stack.MostRecentPropertyAddress;
+
+        P_FINISH;
+
+        Success = UAdvanceGameToolLibrary::JsonStringToAnyStruct(Prop, Ptr, Json);
+    }
+
+#pragma endregion
+
+#pragma region FileSystem
+
+public:
+    /* File system */
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "IsFile", CompactNodeTitle = "IsFile", Keywords = "File plugin check file exist", ToolTip = "Check whether a file exists"),
+        Category = "ActionFiles|FileSystem")
+    static bool IsFile(FString Path);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "IsDirectory", CompactNodeTitle = "IsDir", Keywords = "File plugin check directory exist", ToolTip = "Check whether a directory exists"),
+        Category = "ActionFiles|FileSystem")
+    static bool IsDirectory(FString Path);
+    UFUNCTION(BlueprintPure,
+        meta = (DisplayName = "IsValidFilename", CompactNodeTitle = "IsValidName", Keywords = "File plugin check path valid", ToolTip = "Check whether a filename is valid and can be used"),
+        Category = "ActionFiles|FileSystem")
+    static bool IsValidFilename(FString Filename);
+    UFUNCTION(BlueprintPure,
+        meta = (DisplayName = "ValidateFilename", CompactNodeTitle = "ValidateName", Keywords = "File plugin validate path", ToolTip = "Validate a filename to be used on this file system"),
+        Category = "ActionFiles|FileSystem")
+    static bool ValidateFilename(FString Filename, FString& ValidName);
+    UFUNCTION(BlueprintCallable,
+        meta = (DisplayName = "SetReadOnlyFlag", CompactNodeTitle = "SetReadOnly", Keywords = "File plugin read only path", ToolTip = "Updates the read only property on file"),
+        Category = "ActionFiles|FileSystem")
+    static bool SetReadOnlyFlag(FString FilePath, bool Flag);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "GetReadOnlyFlag", CompactNodeTitle = "IsReadOnly", Keywords = "File plugin read only path", ToolTip = "Gets the read only property on file"),
+        Category = "ActionFiles|FileSystem")
+    static bool GetReadOnlyFlag(FString FilePath);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "GetFileSize", CompactNodeTitle = "GetSize", Keywords = "File plugin size directory", ToolTip = "Gets the size of a file"),
+        Category = "ActionFiles|FileSystem")
+    static int64 GetFileSize(FString FilePath);
+    UFUNCTION(BlueprintCallable,
+        meta = (DisplayName = "ListDirectory", CompactNodeTitle = "LsDir", Keywords = "File plugin list directory pattern regex recursive", ToolTip = "List nodes from directory"),
+        Category = "ActionFiles|FileSystem")
+    static bool ListDirectory(FString Path, FString Pattern, TArray<FString>& Nodes, bool ShowFile = true, bool ShowDirectory = true, bool Recursive = false);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "MakeDirectory", CompactNodeTitle = "MkDir", Keywords = "File plugin make directory recursive", ToolTip = "Create a new directory"),
+        Category = "ActionFiles|FileSystem")
+    static bool MakeDirectory(FString Path, bool Recursive = true);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "RemoveDirectory", CompactNodeTitle = "RmDir", Keywords = "File plugin remove directory recursive", ToolTip = "Removes a directory"),
+        Category = "ActionFiles|FileSystem")
+    static bool RemoveDirectory(FString Path, bool Recursive = false);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "CopyDirectory", CompactNodeTitle = "CpDir", Keywords = "File plugin copy directory recursive", ToolTip = "Copies a directory"),
+        Category = "ActionFiles|FileSystem")
+    static bool CopyDirectory(FString Source, FString Dest);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "MoveDirectory", CompactNodeTitle = "MvDir", Keywords = "File plugin move directory recursive", ToolTip = "Moves a directory"),
+        Category = "ActionFiles|FileSystem")
+    static bool MoveDirectory(FString Source, FString Dest);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "NodeStats", CompactNodeTitle = "NodeStats", Keywords = "File plugin stats directory node", ToolTip = "Gets the stats of a node"),
+        Category = "ActionFiles|FileSystem")
+    static bool NodeStats(FString Path, FCustomNodeStat& Stats);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "RemoveFile", CompactNodeTitle = "RmFile", Keywords = "File plugin remove file recursive", ToolTip = "Removes a file"),
+        Category = "ActionFiles|FileSystem")
+    static bool RemoveFile(FString Path);
+    UFUNCTION(
+        BlueprintCallable, meta = (DisplayName = "CopyFile", CompactNodeTitle = "CpFile", Keywords = "File plugin copy file recursive", ToolTip = "Copies a file"), Category = "ActionFiles|FileSystem")
+    static bool CopyFile(FString Source, FString Dest, bool Force = false);
+    UFUNCTION(
+        BlueprintCallable, meta = (DisplayName = "MoveFile", CompactNodeTitle = "MvFile", Keywords = "File plugin move file recursive", ToolTip = "Moves a file"), Category = "ActionFiles|FileSystem")
+    static bool MoveFile(FString Source, FString Dest, bool Force = false);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "RenameFile", CompactNodeTitle = "RenameFile", Keywords = "File plugin rename file recursive", ToolTip = "Renames a file"),
+        Category = "ActionFiles|FileSystem")
+    static bool RenameFile(FString Path, FString NewName);
+    UFUNCTION(BlueprintPure, meta = (DisplayName = "PathParts", Keywords = "File plugin path parts", ToolTip = "Gets the parts of a path"), Category = "ActionFiles|FileSystem")
+    static void GetPathParts(FString Path, FString& PathPart, FString& BasePart, FString& ExtensionPart, FString& FileName);
+
+#pragma endregion
+
+#pragma region Screenshot
+
+public:
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "TakeScreenshot", CompactNodeTitle = "Screenshot", Keywords = "File plugin screenshot save image", ToolTip = "Take a screenshot and save"),
+        Category = "ActionFiles|Screenshot")
+    static bool TakeScreenShot(FString Filename, FString& Path, bool PrefixTimestamp = true, bool ShowUI = true);
+    UFUNCTION(BlueprintCallable,
+        meta = (DisplayName = "LoadScreenshot", CompactNodeTitle = "LoadScreenshot", Keywords = "File plugin texture read screenshot", ToolTip = "load a screenshot from image file"),
+        Category = "ActionFiles|Screenshot")
+    static UTexture2D* LoadScreenshot(FString Path, bool& Success);
+
+#pragma endregion
+
+#pragma region DataTable
+
+public:
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "DataTableToCSV", Keywords = "File plugin datatable csv convert export", ToolTip = "Converts a datatable to csv string"),
+        Category = "ActionFiles|Datatable")
+    static bool DatatableToCSV(UDataTable* Table, FString& Output);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "DataTableToJSON", Keywords = "File plugin datatable json convert export", ToolTip = "Converts a datatable to json string"),
+        Category = "ActionFiles|Datatable")
+    static bool DataTableToJSON(UDataTable* Table, FString& Output);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "CSVToDataTable", Keywords = "File plugin datatable csv convert import", ToolTip = "Converts a csv string to datatable"),
+        Category = "ActionFiles|Datatable")
+    static UDataTable* CSVToDataTable(FString CSV, UScriptStruct* Struct, bool& Success);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "JSONToDataTable", Keywords = "File plugin datatable json convert import", ToolTip = "Converts a json string to datatable"),
+        Category = "ActionFiles|Datatable")
+    static UDataTable* JSONToDataTable(FString JSON, UScriptStruct* Struct, bool& Success);
+
+    // datatable csv
+    static bool WriteTableToCSV(const UDataTable& InDataTable, FString& Output);
+    static bool WriteRowToCSV(const UScriptStruct* InRowStruct, const void* InRowData, FString& ExportedText);
+    static bool WriteStructEntryToCSV(const void* InRowData, FProperty* InProperty, const void* InPropertyData, FString& ExportedText);
+
+    // datatable json
+    static FString GetKeyFieldName(const UDataTable& InDataTable);
+    static bool WriteTableToJSON(const UDataTable& InDataTable, FString& OutExportText);
+    static bool WriteTableAsObjectToJSON(const UDataTable& InDataTable, TSharedRef<TJsonWriter<TCHAR, TPrettyJsonPrintPolicy<TCHAR>>> JsonWriter);
+    static bool WriteRowToJSON(const UScriptStruct* InRowStruct, const void* InRowData, TSharedRef<TJsonWriter<TCHAR, TPrettyJsonPrintPolicy<TCHAR>>> JsonWriter);
+    static bool WriteStructToJSON(const UScriptStruct* InStruct, const void* InStructData, TSharedRef<TJsonWriter<TCHAR, TPrettyJsonPrintPolicy<TCHAR>>> JsonWriter);
+    static bool WriteStructEntryToJSON(const void* InRowData, const FProperty* InProperty, const void* InPropertyData, TSharedRef<TJsonWriter<TCHAR, TPrettyJsonPrintPolicy<TCHAR>>> JsonWriter);
+    static bool WriteContainerEntryToJSON(
+        const FProperty* InProperty, const void* InPropertyData, const FString* InIdentifier, TSharedRef<TJsonWriter<TCHAR, TPrettyJsonPrintPolicy<TCHAR>>> JsonWriter);
+    static void WriteJSONObjectStartWithOptionalIdentifier(TSharedRef<TJsonWriter<TCHAR, TPrettyJsonPrintPolicy<TCHAR>>> JsonWriter, const FString* InIdentifier);
+    static void WriteJSONValueWithOptionalIdentifier(TSharedRef<TJsonWriter<TCHAR, TPrettyJsonPrintPolicy<TCHAR>>> JsonWriter, const FString* InIdentifier, const TCHAR* InValue);
+
+#pragma endregion
+
+#pragma region ConfigFileINI
+
+public:
+    UFUNCTION(BlueprintCallable, Category = "ActionFiles|Config", CustomThunk, meta = (CustomStructureParam = "OutValue"))
+    static void ReadConfig(FString FilePath, FString Section, FString Key, bool& Success, bool SingleLineArrayRead, UStruct*& OutValue);
+    DECLARE_FUNCTION(execReadConfig)
+    {
+        P_GET_PROPERTY(FStrProperty, FilePath);
+        P_GET_PROPERTY(FStrProperty, Section);
+        P_GET_PROPERTY(FStrProperty, Key);
+        P_GET_UBOOL_REF(Success);
+        P_GET_UBOOL(SingleLineArrayRead);
+
+        Stack.Step(Stack.Object, NULL);
+
+        FProperty* Property = Stack.MostRecentProperty;
+        void* ValuePtr = Stack.MostRecentPropertyAddress;
+
+        P_FINISH;
+
+        Success = UAdvanceGameToolLibrary::ReadConfigFile(FilePath, Section, Key, Property, ValuePtr, SingleLineArrayRead);
+    }
+
+    UFUNCTION(BlueprintCallable, Category = "ActionFiles|Config", CustomThunk, meta = (CustomStructureParam = "Value"))
+    static void WriteConfig(FString FilePath, FString Section, FString Key, bool& Success, bool SingleLineArrayWrite, const UStruct* Value);
+    DECLARE_FUNCTION(execWriteConfig)
+    {
+        P_GET_PROPERTY(FStrProperty, FilePath);
+        P_GET_PROPERTY(FStrProperty, Section);
+        P_GET_PROPERTY(FStrProperty, Key);
+        P_GET_UBOOL_REF(Success);
+        P_GET_UBOOL(SingleLineArrayWrite);
+
+        Stack.Step(Stack.Object, NULL);
+
+        FProperty* Property = Stack.MostRecentProperty;
+        void* ValuePtr = Stack.MostRecentPropertyAddress;
+
+        P_FINISH;
+
+        Success = UAdvanceGameToolLibrary::WriteConfigFile(FilePath, Section, Key, Property, ValuePtr, SingleLineArrayWrite);
+    }
+
+    UFUNCTION(BlueprintCallable, Category = "ActionFiles|Config")
+    static bool RemoveConfig(FString FilePath, FString Section, FString Key);
+
+    // config ini
+    static bool WriteConfigFile(FString Filename, FString Section, FString Key, FProperty* Type, void* Value, bool SingleLineArray);
+    static bool ReadConfigFile(FString Filename, FString Section, FString Key, FProperty* Type, void* Value, bool SingleLineArray);
+
+#pragma endregion
+
+#pragma region JSONV2
+
+    // json v2
+    static bool AnyStructToJsonString(FProperty* Property, void* ValuePtr, FString& Json);
+    static TSharedRef<FJsonValue> AnyStructToJsonValue(FProperty* Property, void* ValuePtr);
+    static bool JsonStringToAnyStruct(FProperty* Property, void* ValuePtr, const FString& Json);
+    static TSharedRef<FJsonValue> JsonValueToAnyStruct(FProperty* Property, TSharedPtr<FJsonValue> Value);
+    static bool JsonValueToAnyStruct(TSharedPtr<FJsonValue> JsonValue, FProperty* Property, void* ValuePtr);
+
+#pragma endregion
 
 #pragma endregion
 
@@ -188,7 +533,7 @@ private:
 
 public:
     /** @public Remove all latent actions for an object. Latent actions are delays, async requests, etc. Use this with caution.
-	 This can be useful for stopping an actor completely (disabled all delays when turning tick off) **/
+     This can be useful for stopping an actor completely (disabled all delays when turning tick off) **/
     UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject"), Category = "ActionObject")
     static void RemoveLatentActionsForObject(UObject* WorldContextObject, UObject* object);
 
@@ -212,27 +557,27 @@ public:
     UFUNCTION(BlueprintPure, Category = "ActionObject", meta = (BlueprintThreadSafe))
     static FString SoftObjectToString(const TSoftObjectPtr<UObject>& SoftObjectReference);
 
-    /**  
-    * @public Test if this does not point to a live UObject, but may in the future
-    *
-    * @return true if this does not point to a real object, but could possibly
-    */
+    /**
+     * @public Test if this does not point to a live UObject, but may in the future
+     *
+     * @return true if this does not point to a real object, but could possibly
+     */
     UFUNCTION(BlueprintPure, Category = "ActionObject", meta = (BlueprintThreadSafe))
     static bool IsSoftObjectPending(const TSoftObjectPtr<UObject>& SoftObjectReference);
 
-    /**  
-    * @public Test if this can never point to a live UObject
-    *
-    * @return true if this is explicitly pointing to no object
-    */
+    /**
+     * @public Test if this can never point to a live UObject
+     *
+     * @return true if this is explicitly pointing to no object
+     */
     UFUNCTION(BlueprintPure, Category = "ActionObject", meta = (BlueprintThreadSafe))
     static bool IsSoftObjectNull(const TSoftObjectPtr<UObject>& SoftObjectReference);
 
-    /**  
-    * @public Test if this points to a live UObject
-    *
-    * @return true if Get() would return a valid non-null pointer
-    */
+    /**
+     * @public Test if this points to a live UObject
+     *
+     * @return true if Get() would return a valid non-null pointer
+     */
     UFUNCTION(BlueprintPure, Category = "ActionObject", meta = (BlueprintThreadSafe))
     static bool IsSoftObjectValid(const TSoftObjectPtr<UObject>& SoftObjectReference);
 
@@ -260,10 +605,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "ActionObject")
     static void GetObjectsInPackage(UPackage* package, TArray<UObject*>& ObjectsOut);
 
-    /** 
+    /**
      * @public Tries to convert the supplied relative or absolute filename to a long package name/path starting with a root like /game
      * This works on both package names and directories, and it does not validate that it actually exists on disk.
-     * 
+     *
      * @param InFilename Filename to convert.
      * @param OutPackageName The resulting long package name if the conversion was successful.
      * @param OutFailureReason Description of an error if the conversion failed.
@@ -279,7 +624,7 @@ public:
      * /Game/* : This is your projects primary content folder
      * /Plugin/* : If a plugin has content the mounting point will be the name of the plugin
      * /Engine/* : Content found in the engine
-    **/
+     **/
     UFUNCTION(BlueprintCallable, Category = "ActionObject")
     static UObject* LoadObjectWithFullPath(const FString& fullObjectPath);
 
@@ -317,7 +662,7 @@ public:
 
     /**
      * @public Get the mount point for a given package path
-     * 
+     *
      * @param InPackagePath The package path to get the mount point for
      * @param InWithoutSlashes Optional parameters that keeps the slashes around the mount point if false
      * @return FName corresponding to the mount point, or Empty if invalid
@@ -342,8 +687,8 @@ public:
      * @NOTE: This only supports setting these types: Numeric (Int, Float, Byte, etc), Bool, LinearColor, Color, Vector, Rotator, String.
      *       With struct types like Vector, the Value string must be in a text serializable form ex (X=20, Y=30, Z=40). Use ToString on the types for examples.
      * @NOTE: If the property is numeric, ensure your Value can actually work with that type. If the value can be converted but precision is lost, no warnings will occur.
-    **/
-    UFUNCTION(BlueprintCallable, Category = "ActionObject", meta=(AdvancedDisplay = "3"))
+     **/
+    UFUNCTION(BlueprintCallable, Category = "ActionObject", meta = (AdvancedDisplay = "3"))
     static bool SetObjectPropertyValue(UObject* Object, const FName PropertyName, const FString& Value, const bool PrintWarnings = true);
 
     // This object is a template for another object - treat like a class default object
@@ -1153,7 +1498,7 @@ public:
 
     /**
      * @public Sets the value of the field with the specified name.
-     * 
+     *
      * @param	JsonObject	The stored json object
      * @param	FieldName	The name of the field to set.
      * @param	Value		The json value to set.
@@ -1185,7 +1530,7 @@ public:
 
     /**
      * @public Removes the field with the specified name.
-     * 
+     *
      * @param	JsonObject	The stored json object
      * @param	FieldName	The name of the field to remove.
      * @return	The stored json object
@@ -1195,7 +1540,7 @@ public:
 
     /**
      * @public Convert json object to json string
-     * 
+     *
      * @param	JsonObject	The stored json object
      * @param	FieldName	The name of the field to get.
      * @return	The json value of json object
@@ -1205,7 +1550,7 @@ public:
 
     /**
      * @public Convert json object to json string
-     * 
+     *
      * @param	JsonObject	The json object to convert
      * @return	The json string
      */
@@ -1223,7 +1568,7 @@ public:
 
     /**
      * @public Convert json string to json object
-     * 
+     *
      * @param	JsonString	The string to convert
      * @return	The json object
      */
@@ -1232,16 +1577,16 @@ public:
 
     /**
      * @public Creates a json value string
-     * 
+     *
      * @param	Value	value to set the string to
      * @return	The blueprint json value
      */
-    UFUNCTION(BlueprintPure, Category = "Json|Make", meta=(NativeMakeFunc))
+    UFUNCTION(BlueprintPure, Category = "Json|Make", meta = (NativeMakeFunc))
     static FBlueprintJsonValue JsonMakeString(const FString& StringValue);
 
     /**
      * @public Creates a json value int
-     * 
+     *
      * @param	Value	value to set the int to
      * @return	The blueprint json value
      */
@@ -1250,7 +1595,7 @@ public:
 
     /**
      * @public Creates a json value float
-     * 
+     *
      * @param	Value	value to set the float to
      * @return	The blueprint json value
      */
@@ -1268,7 +1613,7 @@ public:
 
     /**
      * @public Creates a json value array
-     * 
+     *
      * @param	Value	value to set the array to
      * @return	The blueprint json value
      */
@@ -1277,7 +1622,7 @@ public:
 
     /**
      * @public Creates a json value object
-     * 
+     *
      * @param	Value	value to set the json object to
      * @return	The blueprint json value
      */
@@ -1286,7 +1631,7 @@ public:
 
     /**
      * @public Creates a json value null
-     * 
+     *
      * @return	The blueprint json value
      */
     UFUNCTION(BlueprintPure, Category = "Json|Make", meta = (NativeMakeFunc))
@@ -1333,7 +1678,6 @@ public:
     static FBlueprintJsonObject Conv_JsonValueToObject(const FBlueprintJsonValue& JsonValue);
 
 #pragma endregion
-
 };
 
 class FLambdaRunnable : public FRunnable
@@ -1344,7 +1688,7 @@ public:
         FunctionPointer = InFunction;
         Finished = false;
 
-        Thread = FRunnableThread::Create(this, ThreadName, 0, ThreadPriority); //windows default = 8mb for thread, could specify more
+        Thread = FRunnableThread::Create(this, ThreadName, 0, ThreadPriority);  // windows default = 8mb for thread, could specify more
     }
 
     virtual ~FLambdaRunnable()
@@ -1355,10 +1699,7 @@ public:
     }
 
     // Begin FRunnable interface.
-    virtual bool Init()
-    {
-        return true;
-    }
+    virtual bool Init() { return true; }
 
     virtual uint32 Run()
     {
@@ -1370,16 +1711,13 @@ public:
         return 0;
     }
 
-    virtual void Stop()
-    {
-        Finished = true;
-    }
+    virtual void Stop() { Finished = true; }
 
     virtual void Exit() override
     {
         Finished = true;
 
-        //delete ourselves when we're done
+        // delete ourselves when we're done
         delete this;
     }
 
@@ -1482,7 +1820,6 @@ public:
         return BlueprintNode;
     }
 
-
     // UBlueprintAsyncActionBase interface
     virtual void Activate() override
     {
@@ -1532,7 +1869,6 @@ private:
     EAsyncCallType CallType;
 };
 
-
 /**
  * A handle to a file
  * If this object is garbage collected or destroyed
@@ -1543,10 +1879,7 @@ class ADVANCEGAMETOOLS_API UAGTFileHandle : public UObject
     GENERATED_BODY()
 
 public:
-    UAGTFileHandle()
-        : Handle(nullptr), CanRead(false), CanWrite(false)
-    {
-    }
+    UAGTFileHandle() : Handle(nullptr), CanRead(false), CanWrite(false) {}
 
     virtual void BeginDestroy() override
     {

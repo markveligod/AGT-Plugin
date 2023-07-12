@@ -1,7 +1,5 @@
 ﻿/** Copyright Mark Veligod. Published in 2023. **/
 
-#include <string>
-
 #include "AdvanceGameTools/Library/AdvanceGameToolLibrary.h"
 #include "Misc/Paths.h"
 #include "Internationalization/StringTable.h"

@@ -53,11 +53,11 @@ struct FAdvanceActorParameters
 
     /** Parameters for the actor spawn */
     UPROPERTY(BlueprintReadWrite)
-    FVector Location;
+    FVector Location{FVector::ZeroVector};
 
     /** Parameters for the actor spawn */
     UPROPERTY(BlueprintReadWrite)
-    FRotator Rotation;
+    FRotator Rotation{FRotator::ZeroRotator};
 };
 
 template <typename T>
@@ -185,67 +185,65 @@ UENUM(BlueprintType)
 enum class ESpeedUnit : uint8
 {
     /* Centimeter / second (cm/s). This is default unreal velocity unit. */
-    CentimeterPerSecond		UMETA(DisplayName = "CentimeterPerSecond"),
+    CentimeterPerSecond UMETA(DisplayName = "CentimeterPerSecond"),
 
     /* Foot / second (ft/s). */
-    FootPerSecond			UMETA(DisplayName = "FootPerSecond"),
+    FootPerSecond UMETA(DisplayName = "FootPerSecond"),
 
     /* Meter / second (m/s). */
-    MeterPerSecond			UMETA(DisplayName = "MeterPerSecond"),
+    MeterPerSecond UMETA(DisplayName = "MeterPerSecond"),
 
     /* Meter / minute (m/min). */
-    MeterPerMinute			UMETA(DisplayName = "MeterPerMinute"),
+    MeterPerMinute UMETA(DisplayName = "MeterPerMinute"),
 
     /* Kilometer / second (km/s). */
-    KilometerPerSecond		UMETA(DisplayName = "KilometerPerSecond"),
+    KilometerPerSecond UMETA(DisplayName = "KilometerPerSecond"),
 
     /* Kilometer / minute (km/min). */
-    KilometerPerMinute		UMETA(DisplayName = "KilometerPerMinute"),
+    KilometerPerMinute UMETA(DisplayName = "KilometerPerMinute"),
 
     /*Kilometer / hour (km/h). */
-    KilometerPerHour		UMETA(DisplayName = "KilometerPerHour"),
+    KilometerPerHour UMETA(DisplayName = "KilometerPerHour"),
 
     /* Mile / hour (mph). */
-    MilePerHour				UMETA(DisplayName = "MilePerHour"),
+    MilePerHour UMETA(DisplayName = "MilePerHour"),
 
     /* Knot (kn). Nautical mile per hour. */
-    Knot					UMETA(DisplayName = "Knot"),
+    Knot UMETA(DisplayName = "Knot"),
 
     /* Mach (speed of sound) (M) at standard atm. */
-    Mach					UMETA(DisplayName = "Mach"),
+    Mach UMETA(DisplayName = "Mach"),
 
     /* Speed of light. */
-    SpeedOfLight			UMETA(DisplayName = "SpeedOfLight"),
+    SpeedOfLight UMETA(DisplayName = "SpeedOfLight"),
 
     /* Yard / second. */
-    YardPerSecond			UMETA(DisplayName = "YardPerSecond")
+    YardPerSecond UMETA(DisplayName = "YardPerSecond")
 };
 
 UENUM(BlueprintType)
 enum class EThreadTaskType : uint8
 {
-    GameThread  UMETA(DisplayName = "GameThread"),
-    AnyThread   UMETA(DisplayName = "AnyThread")
+    GameThread UMETA(DisplayName = "GameThread"),
+    AnyThread UMETA(DisplayName = "AnyThread")
 };
-
 
 UENUM(BlueprintType)
 enum class EThreadPriorityType : uint8
 {
-    Normal          UMETA(DisplayName = "Normal"),
-    AboveNormal     UMETA(DisplayName = "AboveNormal"),
-    BelowNormal     UMETA(DisplayName = "BelowNormal"),
-    Highest         UMETA(DisplayName = "Highest"),
-    Lowest          UMETA(DisplayName = "Lowest")
+    Normal UMETA(DisplayName = "Normal"),
+    AboveNormal UMETA(DisplayName = "AboveNormal"),
+    BelowNormal UMETA(DisplayName = "BelowNormal"),
+    Highest UMETA(DisplayName = "Highest"),
+    Lowest UMETA(DisplayName = "Lowest")
 };
 
 UENUM(BlueprintType)
 enum class ETickSplited_Exec : uint8
 {
-    Loop        UMETA(DisplayName = "Loop"),
-    Complete    UMETA(DisplayName = "Complete")
+    Loop UMETA(DisplayName = "Loop"),
+    Complete UMETA(DisplayName = "Complete")
 };
-
 
 DECLARE_DYNAMIC_DELEGATE(FBPAsyncSignature);
 DECLARE_DYNAMIC_DELEGATE_OneParam(FBPParallelForSignature, int32, Val);
@@ -255,10 +253,10 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAsyncCallCompleteSignature);
 UENUM(BlueprintType)
 enum class EAsyncCallType : uint8
 {
-    MainThread              UMETA(DisplayName = "MainThread"),
-    Thread                  UMETA(DisplayName = "Thread"),
-    ThreadPool              UMETA(DisplayName = "ThreadPool"),
-    LargeThreadPool         UMETA(DisplayName = "LargeThreadPool")
+    MainThread UMETA(DisplayName = "MainThread"),
+    Thread UMETA(DisplayName = "Thread"),
+    ThreadPool UMETA(DisplayName = "ThreadPool"),
+    LargeThreadPool UMETA(DisplayName = "LargeThreadPool")
 };
 
 UENUM(BlueprintType)
@@ -303,3 +301,82 @@ enum class ERyAsyncLoadingResult : uint8
 
 DECLARE_DYNAMIC_DELEGATE_OneParam(FOnAssetLoaded, class UObject*, Loaded);
 DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnPackageLoaded, UPackage*, LoadedPackage, ERyAsyncLoadingResult, Result);
+
+USTRUCT(BlueprintType)
+struct FCustomNodeStat
+{
+    GENERATED_BODY();
+
+public:
+    UPROPERTY(BlueprintReadOnly, Category = "FileSystem")
+    bool IsDirectory;
+    UPROPERTY(BlueprintReadOnly, Category = "FileSystem")
+    bool IsReadOnly;
+    UPROPERTY(BlueprintReadOnly, Category = "FileSystem")
+    FDateTime LastAccessTime;
+    UPROPERTY(BlueprintReadOnly, Category = "FileSystem")
+    FDateTime CreationTime;
+    UPROPERTY(BlueprintReadOnly, Category = "FileSystem")
+    FDateTime ModificationTime;
+    UPROPERTY(BlueprintReadOnly, Category = "FileSystem")
+    int64 FileSize;
+    FCustomNodeStat() : IsDirectory(false), IsReadOnly(false), LastAccessTime(FDateTime::MinValue()), CreationTime(FDateTime::MinValue()), ModificationTime(FDateTime::MinValue()), FileSize(0) {}
+};
+
+USTRUCT(BlueprintType)
+struct FProjectPath
+{
+    GENERATED_BODY();
+
+public:
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString Directory;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString Config;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString Content;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString Intermediate;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString Log;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString Mods;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString Plugins;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString Saved;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString User;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString PersistentDownload;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString PlatformExtensions;
+};
+
+USTRUCT(BlueprintType)
+struct FEnginePath
+{
+    GENERATED_BODY();
+
+public:
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString Directory;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString Config;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString Content;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString Intermediate;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString Plugins;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString Saved;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString User;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString DefaultLayout;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString PlatformExtensions;
+    UPROPERTY(BlueprintReadOnly, Category = "Path")
+    FString UserLayout;
+};
