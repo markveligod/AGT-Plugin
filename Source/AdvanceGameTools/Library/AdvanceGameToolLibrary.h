@@ -1292,7 +1292,7 @@ public:
      * @param InitialStartDelayVariance	Use this to add some variance to when the timer starts in lieu of doing a random range on the InitialStartDelay input, in seconds.
      * @return							The timer handle to pass to other timer functions to manipulate this timer.
      */
-    UFUNCTION(BlueprintCallable, Category = "World", meta = (WorldContext = "WorldContextObject"))
+    UFUNCTION(BlueprintCallable, Category = "ActionWorld|World", meta = (WorldContext = "WorldContextObject"))
     static FTimerHandle SetTimerByEventForWorld(
         UObject* WorldContextObject, UPARAM(DisplayName = "Event") FTimerDynamicDelegate Delegate, float Time, bool bLooping, float InitialStartDelay = 0.f, float InitialStartDelayVariance = 0.f);
 
@@ -1306,7 +1306,7 @@ public:
      * @param InitialStartDelayVariance	Use this to add some variance to when the timer starts in lieu of doing a random range on the InitialStartDelay input, in seconds.
      * @return							The timer handle to pass to other timer functions to manipulate this timer.
      */
-    UFUNCTION(BlueprintCallable, Category = "World", meta = (WorldContext = "WorldContextObject"))
+    UFUNCTION(BlueprintCallable, Category = "ActionWorld|World", meta = (WorldContext = "WorldContextObject"))
     static FTimerHandle SetTimerByFunctionForWorld(
         UObject* WorldContextObject, UBlueprint* Object, FString FunctionName, float Time, bool bLooping, float InitialStartDelay = 0.f, float InitialStartDelayVariance = 0.f);
 
@@ -1344,6 +1344,19 @@ public:
 
     /** @public Checking the validity of the structure FTimerHandle **/
     static bool CheckValidTimerHandle(const UWorld* World, const FTimerHandle& TimerHandle);
+
+    /** @public **/
+    UFUNCTION(BlueprintCallable, Category = "ActionWorld|AsyncLevelLoad", meta = (WorldContext = "WorldContextObject"))
+    static void AsyncLevelLoad(UObject* WorldContextObject, const FString& LevelDir, const FString& LevelName, const FString& Options);
+
+    /** @public **/
+    UFUNCTION(BlueprintCallable, Category = "ActionWorld|AsyncLevelLoad", meta = (WorldContext = "WorldContextObject"))
+    static void AsyncLevelLoadByObjectReference(UObject* WorldContextObject, TSoftObjectPtr<UWorld> WorldSoftObject, const FString& Options);
+
+private:
+
+    /** @private **/
+    static void AsyncLevelLoadFinished(const FName& PackageName, UPackage* LoadedPackage, EAsyncLoadingResult::Type Result, UObject* WorldContextObject, FString Options);
 
 #pragma endregion
 
@@ -1457,6 +1470,18 @@ public:
     /** Combines file paths */
     UFUNCTION(BlueprintPure, Category = "StrHelper", meta = (CommutativeAssociativeBinaryOperator = "true"))
     static FString CombineFilePaths(FString A, FString B);
+
+    UFUNCTION(BlueprintCallable, Category = "ActionStr|SHA256Hash")
+    static void SHA256HashFromString(UPARAM(ref) FSHA256Hash& SHA256, const FString &Str);
+
+    UFUNCTION(BlueprintCallable, Category = "ActionStr|SHA256Hash")
+    static void SHA256HashFromFile(UPARAM(ref) FSHA256Hash& SHA256, const FString& Filename);
+
+    UFUNCTION(BlueprintCallable, Category = "ActionStr|SHA256Hash")
+    static void SHA256HashFromArray(UPARAM(ref) FSHA256Hash& SHA256, const TArray<uint8>& Arr);
+
+    UFUNCTION(BlueprintCallable, BlueprintPure, Category = "ActionStr|SHA256Hash")
+    static FString SHA256HashGetHash(UPARAM(ref) FSHA256Hash& SHA256);
 
 #pragma endregion
 

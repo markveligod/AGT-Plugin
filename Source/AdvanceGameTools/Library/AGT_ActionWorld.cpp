@@ -1,6 +1,7 @@
 ﻿/** Copyright Mark Veligod. Published in 2023. **/
 
 #include "AdvanceGameTools/Library/AdvanceGameToolLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
 #pragma region ActionWorld
 
@@ -94,6 +95,25 @@ bool UAdvanceGameToolLibrary::CheckValidTimerHandle(const UWorld* World, const F
         return World->GetTimerManager().TimerExists(TimerHandle);
     }
     return false;
+}
+
+void UAdvanceGameToolLibrary::AsyncLevelLoad(UObject* WorldContextObject, const FString& LevelDir, const FString& LevelName, const FString& Options)
+{
+    LoadPackageAsync(LevelDir + LevelName, FLoadPackageAsyncDelegate::CreateStatic(&AsyncLevelLoadFinished, WorldContextObject, Options), 0, PKG_ContainsMap);
+}
+
+void UAdvanceGameToolLibrary::AsyncLevelLoadByObjectReference(UObject* WorldContextObject, TSoftObjectPtr<UWorld> WorldSoftObject, const FString& Options)
+{
+    const FString LevelPath = WorldSoftObject.ToString();
+    LoadPackageAsync(LevelPath, FLoadPackageAsyncDelegate::CreateStatic(&AsyncLevelLoadFinished, WorldContextObject, Options), 0, PKG_ContainsMap);
+}
+
+void UAdvanceGameToolLibrary::AsyncLevelLoadFinished(const FName& PackageName, UPackage* LoadedPackage, EAsyncLoadingResult::Type Result, UObject* WorldContextObject, FString Options)
+{
+    if (Result == EAsyncLoadingResult::Succeeded && LoadedPackage)
+    {
+        UGameplayStatics::OpenLevel(WorldContextObject, PackageName, true, Options);
+    }
 }
 
 #pragma endregion

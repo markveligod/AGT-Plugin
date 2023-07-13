@@ -1,5 +1,6 @@
 ﻿/** Copyright Mark Veligod. Published in 2023. **/
 
+#include "SHA256Hash.h"
 #include "AdvanceGameTools/Library/AdvanceGameToolLibrary.h"
 #include "Misc/Paths.h"
 #include "Internationalization/StringTable.h"
@@ -208,6 +209,26 @@ FString UAdvanceGameToolLibrary::Conv_ArrayUint8ToString(const TArray<uint8>& Ar
 FString UAdvanceGameToolLibrary::CombineFilePaths(FString A, FString B)
 {
     return FPaths::Combine(A, B);
+}
+
+void UAdvanceGameToolLibrary::SHA256HashFromString(FSHA256Hash& SHA256, const FString& Str)
+{
+    SHA256.FromString(Str);
+}
+
+void UAdvanceGameToolLibrary::SHA256HashFromFile(FSHA256Hash& SHA256, const FString& Filename)
+{
+    SHA256.FromFile(Filename);
+}
+
+void UAdvanceGameToolLibrary::SHA256HashFromArray(FSHA256Hash& SHA256, const TArray<uint8>& Arr)
+{
+    SHA256.FromArray(Arr);
+}
+
+FString UAdvanceGameToolLibrary::SHA256HashGetHash(FSHA256Hash& SHA256)
+{
+    return SHA256.GetHash();
 }
 
 #pragma endregion
